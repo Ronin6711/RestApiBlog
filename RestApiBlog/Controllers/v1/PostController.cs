@@ -5,6 +5,7 @@ using RestApiBlog.Contracts.V1;
 using RestApiBlog.Contracts.V1.Requests;
 using RestApiBlog.Contracts.V1.Responses;
 using RestApiBlog.Domain;
+using RestApiBlog.Extensions;
 using RestApiBlog.Services;
 
 namespace RestApiBlog.Controllers.v1
@@ -20,6 +21,7 @@ namespace RestApiBlog.Controllers.v1
         }
 
         [HttpGet(ApiRoutes.Posts.GetAllPosts)]
+        //[Authorize(Policy = "ViewerAllPost")]
         public async Task<IActionResult> GetAllPosts()
         {
             return Ok(await _postService.GetPostsAsync());
@@ -39,11 +41,15 @@ namespace RestApiBlog.Controllers.v1
         [HttpPut(ApiRoutes.Posts.UpdatePost)]
         public async Task<IActionResult> UpdatePost([FromRoute] Guid postId, [FromBody] UpdatePostRequest request)
         {
-            var post = new Post
+            var userOwnsPost = await _postService.UserOwnsPostAsync(postId, HttpContext.GetUserId());
+
+            if(!userOwnsPost)
             {
-                Id = postId,
-                Name = request.Name
-            };
+                return BadRequest(new { error = "You do not own this post"});
+            }
+
+            var post = await _postService.GetPostByIdAsync(postId);
+            post.Name = request.Name;
 
             var updated = await _postService.UpdatePostAsync(post);
 
@@ -56,6 +62,13 @@ namespace RestApiBlog.Controllers.v1
         [HttpDelete(ApiRoutes.Posts.DeletePost)]
         public async Task<IActionResult> DeletePost([FromRoute] Guid postId)
         {
+            var userOwnsPost = await _postService.UserOwnsPostAsync(postId, HttpContext.GetUserId());
+
+            if (!userOwnsPost)
+            {
+                return BadRequest(new { error = "You do not own this post" });
+            }
+
             var deleted = await _postService.DeletePostAsync(postId);
 
             if (deleted)
@@ -67,7 +80,11 @@ namespace RestApiBlog.Controllers.v1
         [HttpPost(ApiRoutes.Posts.CreatePost)]
         public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest postRequest)
         {
-            var post = new Post { Name = postRequest.Name };
+            var post = new Post
+            {
+                Name = postRequest.Name,
+                UserId = HttpContext.GetUserId()
+            };
 
             if (post.Id != Guid.Empty)
                 post.Id = Guid.NewGuid();
