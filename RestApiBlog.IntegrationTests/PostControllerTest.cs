@@ -29,7 +29,7 @@ namespace RestApiBlog.IntegrationTests
         {
             // Arrange
             await AuthenticateAsync();
-            var createdPost = await CreatePostAsync(new CreatePostRequest { Name = "Test post" });
+            var createdPost = await CreatePostAsync(new CreatePostRequest { Header = "Test post" });
 
             // Act
             var response = await _testClient.GetAsync(ApiRoutes.Posts.GetPost.Replace("{postId}", createdPost.Id.ToString()));
@@ -38,7 +38,7 @@ namespace RestApiBlog.IntegrationTests
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var returnedPost = await response.Content.ReadAsAsync<Post>();
             returnedPost.Id.Should().Be(createdPost.Id);
-            returnedPost.Name.Should().Be("Test post");
+            returnedPost.Header.Should().Be("Test post");
         }
     }
 }

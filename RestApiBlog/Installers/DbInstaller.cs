@@ -10,14 +10,18 @@ namespace RestApiBlog.Installers
         public void InstallServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddDbContext<DataContext>(options =>
-                options.UseSqlServer(
+                options.UseLazyLoadingProxies(true)
+                    .UseSqlServer(
                     configuration.GetConnectionString("DefaultConnection")));
 
             services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<DataContext>();
             services.AddControllersWithViews();
 
             services.AddScoped<IPostService, PostService>();
+            services.AddScoped<IGameService, GameService>();
+            services.AddScoped<IPublicProfileService, PublicProfileService>();
         }
     }
 }

@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using RestApiBlog.Data;
-using RestApiBlog.Installers;
-using RestApiBlog.Options;
+using RestApiWeb.Data;
 
-namespace RestApiBlog
+namespace RestApiWeb
 {
     public class Program
     {
@@ -30,9 +28,9 @@ namespace RestApiBlog
             var swaggerOptions = new SwaggerOptions();
             builder.Configuration.GetSection(nameof(SwaggerOptions)).Bind(swaggerOptions);
 
-            app.UseSwagger(option => 
-            { 
-                option.RouteTemplate = swaggerOptions.JsonRoute; 
+            app.UseSwagger(option =>
+            {
+                option.RouteTemplate = swaggerOptions.JsonRoute;
             });
 
             app.UseSwaggerUI(option =>
@@ -47,7 +45,7 @@ namespace RestApiBlog
 
             app.UseAuthorization();
 
-            
+
 
             var serviceScope = app.Services.CreateScope();
             var roleManager = serviceScope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();

@@ -4,6 +4,10 @@ using RestApiBlog.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using RestApiBlog.Services;
+using RestApiBlog.Authorization;
+using Microsoft.AspNetCore.Authorization;
+using FluentValidation.AspNetCore;
+using RestApiBlog.Filters;
 
 namespace RestApiBlog.Installers
 {
@@ -18,7 +22,13 @@ namespace RestApiBlog.Installers
 
             services.AddScoped<IIdentityService, IdentityService>();
 
-            services.AddMvc(options => options.EnableEndpointRouting = false);
+            services
+                .AddMvc(options =>
+                {
+                    options.EnableEndpointRouting = false;
+                    options.Filters.Add<ValidationFilter>();
+                })
+                .AddFluentValidation(mvcConfiguration => mvcConfiguration.RegisterValidatorsFromAssemblyContaining<Program>());
 
             var tokenValidationParameters = new TokenValidationParameters
             {
@@ -34,11 +44,13 @@ namespace RestApiBlog.Installers
 
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("ViewerAllPost", builder =>
+                options.AddPolicy("Developer", policy =>
                 {
-                    builder.RequireClaim("allPost.view", "true");
+                    policy.AddRequirements(new WorksForCompanyRequirement("main.com"));
                 });
             });
+
+            services.AddSingleton<IAuthorizationHandler, WorksForCompanyHandler>();
 
             services.AddAuthentication(x =>
             {

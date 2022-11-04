@@ -13,6 +13,14 @@ namespace RestApiBlog.Data
 
         public DbSet<Post> Posts { get; set; }
 
-        public DbSet<RefreshToken> RefreshTokens { get; set; } 
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
+        public DbSet<Game> Games { get; set; }
+        
+        public DbSet<GameUser> GameUsers { get; set; }
+
+        public DbSet<PublicProfile> PublicProfiles { get; set; }
+
+        public DbSet<PostGame> PostGames { get; set; }
     }
 }

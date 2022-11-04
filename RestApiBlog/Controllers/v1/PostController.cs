@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestApiBlog.Contracts.V1;
@@ -10,32 +11,37 @@ using RestApiBlog.Services;
 
 namespace RestApiBlog.Controllers.v1
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin, DefaultUser")]
     public class PostController : Controller
     {
         private readonly IPostService _postService;
+        private readonly IMapper _mapper;
+        private readonly IGameService _gameService;
 
-        public PostController(IPostService postService)
+        public PostController(IPostService postService, IMapper mapper, IGameService gameService)
         {
-           _postService = postService;
+            _postService = postService;
+            _mapper = mapper;
+            _gameService = gameService;
         }
 
         [HttpGet(ApiRoutes.Posts.GetAllPosts)]
-        //[Authorize(Policy = "ViewerAllPost")]
         public async Task<IActionResult> GetAllPosts()
         {
-            return Ok(await _postService.GetPostsAsync());
+            var posts = await _postService.GetPostsAsync();
+
+            return Ok(_mapper.Map<List<PostResponse>>(posts));
         }
 
         [HttpGet(ApiRoutes.Posts.GetPost)]
-        public async Task<IActionResult> GetPost([FromRoute]Guid postId)
+        public async Task<IActionResult> GetPost([FromRoute] Guid postId)
         {
             var post = await _postService.GetPostByIdAsync(postId);
 
-            if(post == null)
+            if (post == null)
                 return NotFound();
 
-            return Ok(post);
+            return Ok(_mapper.Map<PostResponse>(post));
         }
 
         [HttpPut(ApiRoutes.Posts.UpdatePost)]
@@ -43,18 +49,34 @@ namespace RestApiBlog.Controllers.v1
         {
             var userOwnsPost = await _postService.UserOwnsPostAsync(postId, HttpContext.GetUserId());
 
-            if(!userOwnsPost)
+            if (!userOwnsPost)
             {
                 return BadRequest(new { error = "You do not own this post"});
             }
 
+            var listGames = new List<PostGame>();
+            foreach (var game in request.Games)
+            {
+                var gameInDb = await _gameService.GetGameByNameAsync(game.Name);
+                if (gameInDb == null)
+                {
+                    return BadRequest(new { Error = $"Game '{game.Name}' does not exist in the database" });
+                }
+                listGames.Add(new PostGame { Game = gameInDb });
+            }
+
             var post = await _postService.GetPostByIdAsync(postId);
-            post.Name = request.Name;
+            post.DateCreated = DateTime.Now;
+            post.Header = request.Header;
+            post.Description = request.Description;
+            post.Image = request.Image;
+            post.Games = listGames;
+
 
             var updated = await _postService.UpdatePostAsync(post);
 
             if(updated)
-                return Ok(post);
+                return Ok(_mapper.Map<PostResponse>(post));
 
             return NotFound();
         }
@@ -78,25 +100,38 @@ namespace RestApiBlog.Controllers.v1
         }
 
         [HttpPost(ApiRoutes.Posts.CreatePost)]
-        public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest postRequest)
+        public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request)
         {
+            var newPostId = Guid.NewGuid();
+
+            var listGames = new List<PostGame>();
+            foreach (var game in request.Games)
+            {
+                var gameInDb = await _gameService.GetGameByNameAsync(game.Name);
+                if (gameInDb == null)
+                {
+                    return BadRequest(new { Error = $"Game '{game.Name}' does not exist in the database" });
+                }
+                listGames.Add(new PostGame { Game = gameInDb, PostId = newPostId });
+            }
+
             var post = new Post
             {
-                Name = postRequest.Name,
-                UserId = HttpContext.GetUserId()
+                Id = newPostId,
+                DateCreated = DateTime.Now,
+                Header = request.Header,
+                Description = request.Description,
+                Image = request.Image,
+                Games = listGames,
+                UserId = HttpContext.GetUserId(),
             };
-
-            if (post.Id != Guid.Empty)
-                post.Id = Guid.NewGuid();
 
             await _postService.CreatePostAsync(post);
 
             var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.ToUriComponent()}";
             var locationUri = baseUrl + "/" + ApiRoutes.Posts.GetPost.Replace("{postId}", post.Id.ToString());
 
-            var response = new PostResponse { Id = post.Id };
-
-            return Created(locationUri, response);
+            return Created(locationUri, _mapper.Map<PostResponse>(post));
         }
     }
 }

@@ -39,8 +39,12 @@ namespace RestApiBlog.Services
                 new Claim("id", user.Id),
             };
 
-            //var userClaims = await _userManager.GetClaimsAsync(user);
-            //claims.AddRange(userClaims);
+            var userRoles = await _userManager.GetRolesAsync(user);
+            foreach (var userRole in userRoles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, userRole));
+            }
+
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
