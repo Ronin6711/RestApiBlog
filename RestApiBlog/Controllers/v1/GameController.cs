@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RestApiBlog.Cache;
 using RestApiBlog.Contracts.V1;
 using RestApiBlog.Contracts.V1.Requests;
 using RestApiBlog.Contracts.V1.Responses;
@@ -10,7 +11,7 @@ using RestApiBlog.Services;
 
 namespace RestApiBlog.Controllers.v1
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+    
     public class GameController : Controller
     {
         private readonly IGameService _gameService;
@@ -23,6 +24,7 @@ namespace RestApiBlog.Controllers.v1
         }
 
         [HttpGet(ApiRoutes.Games.GetAll)]
+        [Cached(300)]
         public async Task<IActionResult> GetAll()
         {
             var games = await _gameService.GetAllGamesAsync();
@@ -31,6 +33,7 @@ namespace RestApiBlog.Controllers.v1
         }
 
         [HttpGet(ApiRoutes.Games.GetGame)]
+        [Cached(300)]
         public async Task<IActionResult> GetGame([FromRoute] Guid gameId)
         {
             var game = await _gameService.GetGameByIdAsync(gameId);

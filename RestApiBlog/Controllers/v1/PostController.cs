@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RestApiBlog.Cache;
 using RestApiBlog.Contracts.V1;
 using RestApiBlog.Contracts.V1.Requests;
 using RestApiBlog.Contracts.V1.Responses;
@@ -26,6 +27,7 @@ namespace RestApiBlog.Controllers.v1
         }
 
         [HttpGet(ApiRoutes.Posts.GetAllPosts)]
+        [Cached(300)]
         public async Task<IActionResult> GetAllPosts()
         {
             var posts = await _postService.GetPostsAsync();
@@ -34,6 +36,7 @@ namespace RestApiBlog.Controllers.v1
         }
 
         [HttpGet(ApiRoutes.Posts.GetPost)]
+        [Cached(300)]
         public async Task<IActionResult> GetPost([FromRoute] Guid postId)
         {
             var post = await _postService.GetPostByIdAsync(postId);
