@@ -11,7 +11,7 @@ using RestApiBlog.Services;
 
 namespace RestApiBlog.Controllers.v1
 {
-    
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin, DefaultUser")]
     public class GameController : Controller
     {
         private readonly IGameService _gameService;
