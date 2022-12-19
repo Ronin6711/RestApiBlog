@@ -10,9 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Areas\**" />
     <Compile Remove="wwwroot\**" />
+    <Content Remove="Areas\**" />
     <Content Remove="wwwroot\**" />
+    <EmbeddedResource Remove="Areas\**" />
     <EmbeddedResource Remove="wwwroot\**" />
+    <None Remove="Areas\**" />
     <None Remove="wwwroot\**" />
   </ItemGroup>
 
